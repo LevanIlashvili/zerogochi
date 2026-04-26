@@ -1,3 +1,17 @@
+:root {
+  /* Game Boy DMG palette — locked. do not add colors. */
+  --gb-darkest: #0f380f;
+  --gb-dark: #306230;
+  --gb-light: #8bac0f;
+  --gb-lightest: #9bbc0f;
+
+  /* device shell */
+  --shell-bg: #1a1a1a;
+  --shell-plastic: #2a2a2a;
+  --shell-edge: #0a0a0a;
+  --led-on: #ff3838;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,7 +21,31 @@
 html,
 body {
   height: 100%;
-  background: #1a1a1a;
-  color: #eee;
-  font-family: system-ui, sans-serif;
+  background: var(--shell-bg);
+  color: var(--gb-lightest);
+  font-family: var(--font-pixel), monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+img,
+svg {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  shape-rendering: crispEdges;
+}
+
+main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }

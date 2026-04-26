@@ -1,3 +1,7 @@
 export default function Page() {
-  return <main style={{ padding: 24 }}>zerogochi</main>;
+  return (
+    <main>
+      <div style={{ fontSize: 14 }}>zerogochi</div>
+    </main>
+  );
 }
