@@ -41,3 +41,13 @@
   padding: 10px;
   position: relative;
 }
+
+.footer {
+  margin-top: 12px;
+  padding: 0 4px;
+  font-size: 6px;
+  color: #888;
+  text-align: center;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}

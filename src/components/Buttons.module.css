@@ -1,0 +1,50 @@
+.row {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 18px;
+  padding: 0 4px;
+}
+
+.btn {
+  width: 64px;
+  height: 56px;
+  background: #3a3a3a;
+  border: 3px solid #0a0a0a;
+  border-radius: 6px;
+  color: #ddd;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 4px 0 0 #000;
+  transition: transform 60ms ease, box-shadow 60ms ease;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.btn:hover:not(:disabled) {
+  background: #444;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnDown {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 #000;
+}
+
+.letter {
+  font-size: 14px;
+  color: #fff;
+}
+
+.label {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #aaa;
+}
