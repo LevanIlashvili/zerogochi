@@ -1,0 +1,37 @@
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 6px;
+  color: var(--gb-darkest);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.label {
+  width: 14px;
+  letter-spacing: 1px;
+}
+
+.track {
+  display: inline-flex;
+  gap: 1px;
+  border: 1px solid var(--gb-darkest);
+  padding: 1px;
+}
+
+.cellOn {
+  width: 8px;
+  height: 6px;
+  background: var(--gb-darkest);
+}
+
+.cellOff {
+  width: 8px;
+  height: 6px;
+  background: var(--gb-light);
+}
