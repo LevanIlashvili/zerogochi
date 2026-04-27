@@ -67,8 +67,8 @@ export function Pet() {
         }
       >
         <StatBars {...stats} />
-        <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
-          <AnimatedSprite look={look} state={state} scale={6} />
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}>
+          <AnimatedSprite look={look} state={state} scale={8} />
         </div>
         <div
           style={{
