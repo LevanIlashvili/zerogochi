@@ -220,6 +220,45 @@ export const CHEEKS: Pixel[] = [
 ];
 
 // =====================================================================
+// PROPS — drop-in items that float in/out for action animations
+// =====================================================================
+
+// Bread loaf — used for the eating animation. 6x4
+export const PROP_BREAD: Pixel[] = [
+  { x: 9, y: 19, c: "outline" }, { x: 10, y: 19, c: "outline" }, { x: 11, y: 19, c: "outline" }, { x: 12, y: 19, c: "outline" }, { x: 13, y: 19, c: "outline" }, { x: 14, y: 19, c: "outline" },
+  { x: 8, y: 20, c: "outline" }, { x: 9, y: 20 }, { x: 10, y: 20 }, { x: 11, y: 20, c: "shadow" }, { x: 12, y: 20 }, { x: 13, y: 20, c: "shadow" }, { x: 14, y: 20 }, { x: 15, y: 20, c: "outline" },
+  { x: 8, y: 21, c: "outline" }, { x: 9, y: 21 }, { x: 10, y: 21, c: "shadow" }, { x: 11, y: 21 }, { x: 12, y: 21 }, { x: 13, y: 21 }, { x: 14, y: 21, c: "shadow" }, { x: 15, y: 21, c: "outline" },
+  { x: 9, y: 22, c: "outline" }, { x: 10, y: 22, c: "outline" }, { x: 11, y: 22, c: "outline" }, { x: 12, y: 22, c: "outline" }, { x: 13, y: 22, c: "outline" }, { x: 14, y: 22, c: "outline" },
+];
+
+// Ball — used for play. 4x4 circle with shading
+export const PROP_BALL: Pixel[] = [
+  { x: 10, y: 19, c: "outline" }, { x: 11, y: 19, c: "outline" }, { x: 12, y: 19, c: "outline" }, { x: 13, y: 19, c: "outline" },
+  { x: 9, y: 20, c: "outline" }, { x: 10, y: 20 }, { x: 11, y: 20 }, { x: 12, y: 20, c: "shadow" }, { x: 13, y: 20, c: "shadow" }, { x: 14, y: 20, c: "outline" },
+  { x: 9, y: 21, c: "outline" }, { x: 10, y: 21 }, { x: 11, y: 21, c: "shadow" }, { x: 12, y: 21, c: "shadow" }, { x: 13, y: 21, c: "shadow" }, { x: 14, y: 21, c: "outline" },
+  { x: 10, y: 22, c: "outline" }, { x: 11, y: 22, c: "outline" }, { x: 12, y: 22, c: "outline" }, { x: 13, y: 22, c: "outline" },
+];
+
+// Heart — floats up from pet
+export const PROP_HEART: Pixel[] = [
+  { x: 4, y: 4, c: "outline" }, { x: 5, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4, c: "outline" },
+  { x: 3, y: 5, c: "outline" }, { x: 4, y: 5 }, { x: 5, y: 5 }, { x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 }, { x: 9, y: 5, c: "outline" },
+  { x: 3, y: 6, c: "outline" }, { x: 4, y: 6 }, { x: 5, y: 6 }, { x: 6, y: 6 }, { x: 7, y: 6 }, { x: 8, y: 6 }, { x: 9, y: 6, c: "outline" },
+  { x: 4, y: 7, c: "outline" }, { x: 5, y: 7 }, { x: 6, y: 7 }, { x: 7, y: 7 }, { x: 8, y: 7, c: "outline" },
+  { x: 5, y: 8, c: "outline" }, { x: 6, y: 8 }, { x: 7, y: 8, c: "outline" },
+  { x: 6, y: 9, c: "outline" },
+];
+
+// Star — floats up from pet on play
+export const PROP_STAR: Pixel[] = [
+  { x: 6, y: 4, c: "outline" },
+  { x: 5, y: 5, c: "outline" }, { x: 6, y: 5 }, { x: 7, y: 5, c: "outline" },
+  { x: 4, y: 6, c: "outline" }, { x: 5, y: 6 }, { x: 6, y: 6 }, { x: 7, y: 6 }, { x: 8, y: 6, c: "outline" },
+  { x: 5, y: 7, c: "outline" }, { x: 6, y: 7 }, { x: 7, y: 7, c: "outline" },
+  { x: 4, y: 8, c: "outline" }, { x: 8, y: 8, c: "outline" },
+];
+
+// =====================================================================
 // PATTERNS — applied as shadow color over body fill
 // =====================================================================
 export function patternPixels(

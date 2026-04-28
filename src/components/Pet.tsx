@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Device } from "./Device";
 import { StatBars } from "./StatBars";
 import { Buttons, type ButtonKind } from "./Buttons";
-import { AnimatedSprite } from "@/sprite/AnimatedSprite";
+import { AnimatedSprite, type AnimatedSpriteHandle } from "@/sprite/AnimatedSprite";
 import { lookFromSeed } from "@/sprite/types";
 import { statFromValues } from "@/sprite/states";
 import { BEEPS } from "@/lib/beep";
@@ -22,10 +22,26 @@ export function Pet() {
   const look = lookFromSeed(seed);
   const [stats, setStats] = useState<Stats>(INITIAL);
   const [bornAt] = useState(() => Date.now() - 1000 * 60 * 60 * 24 * 3);
+  const [booting, setBooting] = useState(true);
+  const [bootStep, setBootStep] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const spriteRef = useRef<AnimatedSpriteHandle | null>(null);
   const state = statFromValues(stats.hunger, stats.mood, stats.energy);
   const ageDays = Math.floor((Date.now() - bornAt) / (1000 * 60 * 60 * 24));
 
-  // gentle decay so the pet feels alive in the mock — every 5s lose 1 from one stat
+  // Boot sequence
+  useEffect(() => {
+    const t1 = window.setTimeout(() => setBootStep(1), 280);
+    const t2 = window.setTimeout(() => setBootStep(2), 700);
+    const t3 = window.setTimeout(() => setBooting(false), 1300);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+    };
+  }, []);
+
+  // Gentle decay
   useEffect(() => {
     const id = window.setInterval(() => {
       setStats((s) => ({
@@ -37,28 +53,39 @@ export function Pet() {
     return () => window.clearInterval(id);
   }, []);
 
-  function handle(kind: ButtonKind) {
-    if (kind === "A") {
-      BEEPS.btnA();
-      window.setTimeout(BEEPS.eat, 100);
-      setStats((s) => ({ ...s, hunger: Math.min(100, s.hunger + 25) }));
-    } else if (kind === "B") {
-      BEEPS.btnB();
-      window.setTimeout(BEEPS.play, 100);
-      setStats((s) => ({
-        ...s,
-        mood: Math.min(100, s.mood + 25),
-        energy: Math.max(0, s.energy - 5),
-      }));
-    } else {
-      BEEPS.btnC();
+  async function handle(kind: ButtonKind) {
+    if (busy || booting) return;
+    setBusy(true);
+    try {
+      if (kind === "A") {
+        BEEPS.btnA();
+        window.setTimeout(BEEPS.eat, 100);
+        await spriteRef.current?.triggerAction("eating");
+        spriteRef.current?.triggerReaction("heart");
+        setStats((s) => ({ ...s, hunger: Math.min(100, s.hunger + 25) }));
+      } else if (kind === "B") {
+        BEEPS.btnB();
+        window.setTimeout(BEEPS.play, 100);
+        await spriteRef.current?.triggerAction("playing");
+        spriteRef.current?.triggerReaction("star");
+        setStats((s) => ({
+          ...s,
+          mood: Math.min(100, s.mood + 25),
+          energy: Math.max(0, s.energy - 5),
+        }));
+      } else {
+        BEEPS.btnC();
+        await spriteRef.current?.triggerAction("talking");
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <>
       <Device
-        controls={<Buttons onPress={handle} />}
+        controls={<Buttons onPress={handle} disabled={busy || booting} />}
         footer={
           <>
             <div>@username</div>
@@ -66,25 +93,30 @@ export function Pet() {
           </>
         }
       >
-        <StatBars {...stats} />
-        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}>
-          <AnimatedSprite look={look} state={state} scale={8} />
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 6,
-            color: "var(--gb-darkest)",
-            marginTop: 8,
-          }}
-        >
-          <span>#{String(seed).padStart(4, "0")}</span>
-          <span>{ageDays}d</span>
-        </div>
+        {booting ? (
+          <BootScreen step={bootStep} />
+        ) : (
+          <>
+            <StatBars {...stats} />
+            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}>
+              <AnimatedSprite ref={spriteRef} look={look} state={state} scale={8} />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 6,
+                color: "var(--gb-darkest)",
+                marginTop: 8,
+              }}
+            >
+              <span>#{String(seed).padStart(4, "0")}</span>
+              <span>{ageDays}d</span>
+            </div>
+          </>
+        )}
       </Device>
 
-      {/* dev panel — useful for review, kept tiny */}
       <div
         style={{
           marginTop: 18,
@@ -140,5 +172,28 @@ export function Pet() {
         </div>
       </div>
     </>
+  );
+}
+
+function BootScreen({ step }: { step: 0 | 1 | 2 | number }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 240,
+        gap: 12,
+        color: "var(--gb-darkest)",
+      }}
+    >
+      <div style={{ fontSize: 10, letterSpacing: 2 }}>
+        {step === 0 ? "" : "ZEROGOCHI"}
+      </div>
+      <div style={{ fontSize: 6, letterSpacing: 1, height: 12 }}>
+        {step === 1 ? "* * *" : step >= 2 ? "READY" : ""}
+      </div>
+    </div>
   );
 }
