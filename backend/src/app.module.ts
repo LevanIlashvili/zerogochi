@@ -5,9 +5,17 @@ import { AuthModule } from './auth/auth.module';
 import { EthersModule } from './ethers/ethers.module';
 import { RelayModule } from './relay/relay.module';
 import { PetModule } from './pet/pet.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), EthersModule, AuthModule, RelayModule, PetModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    EthersModule,
+    AuthModule,
+    RelayModule,
+    PetModule,
+    StorageModule,
+  ],
   controllers: [HealthController],
 })
 export class AppModule {}

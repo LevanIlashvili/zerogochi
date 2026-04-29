@@ -52,4 +52,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ request: request_ }),
     }),
+
+  uploadBlob: (ciphertextB64: string) =>
+    request<{ rootHash: string; txHash: string }>("/api/storage/upload", {
+      method: "POST",
+      body: JSON.stringify({ ciphertextB64 }),
+    }),
 };
