@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ERC2771ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/metatx/ERC2771ContextUpgradeable.sol";
 import {IERC7857} from "./interfaces/IERC7857.sol";
 import {IERC7857Metadata} from "./interfaces/IERC7857Metadata.sol";
 import {IERC7857DataVerifier, PreimageProofOutput, TransferValidityProofOutput} from "./interfaces/IERC7857DataVerifier.sol";
@@ -9,6 +11,7 @@ import {Utils} from "./Utils.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AgentNFT is
+    ERC2771ContextUpgradeable,
     AccessControlEnumerableUpgradeable,
     IERC7857,
     IERC7857Metadata
@@ -64,8 +67,39 @@ contract AgentNFT is
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
+    constructor(address trustedForwarder_) ERC2771ContextUpgradeable(trustedForwarder_) {
         _disableInitializers();
+    }
+
+    // ERC-2771 plumbing — both ContextUpgradeable parents need a single override.
+    function _msgSender()
+        internal
+        view
+        virtual
+        override(ContextUpgradeable, ERC2771ContextUpgradeable)
+        returns (address)
+    {
+        return ERC2771ContextUpgradeable._msgSender();
+    }
+
+    function _msgData()
+        internal
+        view
+        virtual
+        override(ContextUpgradeable, ERC2771ContextUpgradeable)
+        returns (bytes calldata)
+    {
+        return ERC2771ContextUpgradeable._msgData();
+    }
+
+    function _contextSuffixLength()
+        internal
+        view
+        virtual
+        override(ContextUpgradeable, ERC2771ContextUpgradeable)
+        returns (uint256)
+    {
+        return ERC2771ContextUpgradeable._contextSuffixLength();
     }
 
     function initialize(
@@ -79,6 +113,8 @@ contract AgentNFT is
 
         __AccessControlEnumerable_init();
 
+        // Admin grants intentionally use msg.sender (not _msgSender) so a
+        // meta-tx-relayed initialize cannot escalate the relayed user to admin.
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
 
@@ -123,7 +159,7 @@ contract AgentNFT is
     function update(uint256 tokenId, bytes[] calldata proofs) public virtual {
         AgentNFTStorage storage $ = _getAgentStorage();
         TokenData storage token = $.tokens[tokenId];
-        require(token.owner == msg.sender, "Not owner");
+        require(token.owner == _msgSender(), "Not owner");
 
         PreimageProofOutput[] memory proofOupt = $.verifier.verifyPreimage(
             proofs
@@ -164,7 +200,7 @@ contract AgentNFT is
         );
 
         if (to == address(0)) {
-            to = msg.sender;
+            to = _msgSender();
         }
 
         PreimageProofOutput[] memory proofOupt = $.verifier.verifyPreimage(
@@ -196,7 +232,7 @@ contract AgentNFT is
             approvedUser: address(0)
         });
 
-        emit Minted(tokenId, msg.sender, to, dataHashes, dataDescriptions);
+        emit Minted(tokenId, _msgSender(), to, dataHashes, dataDescriptions);
     }
 
     function transfer(
@@ -206,7 +242,7 @@ contract AgentNFT is
     ) public virtual {
         AgentNFTStorage storage $ = _getAgentStorage();
         require(to != address(0), "Zero address");
-        require($.tokens[tokenId].owner == msg.sender, "Not owner");
+        require($.tokens[tokenId].owner == _msgSender(), "Not owner");
 
         TransferValidityProofOutput[] memory proofOupt = $
             .verifier
@@ -234,7 +270,7 @@ contract AgentNFT is
         $.tokens[tokenId].owner = to;
         $.tokens[tokenId].dataHashes = newDataHashes;
 
-        emit Transferred(tokenId, msg.sender, to);
+        emit Transferred(tokenId, _msgSender(), to);
         emit PublishedSealedKey(to, tokenId, sealedKeys);
     }
 
@@ -248,9 +284,9 @@ contract AgentNFT is
         require(to != address(0), "Zero address");
         require($.tokens[tokenId].owner == from, "Not owner");
         require(
-            $.tokens[tokenId].approvedUser == msg.sender ||
-                $.tokens[tokenId].owner == msg.sender ||
-                $.operatorApprovals[from][msg.sender],
+            $.tokens[tokenId].approvedUser == _msgSender() ||
+                $.tokens[tokenId].owner == _msgSender() ||
+                $.operatorApprovals[from][_msgSender()],
             "Not approved"
         );
 
@@ -300,7 +336,7 @@ contract AgentNFT is
         $.tokens[tokenId].owner = to;
         $.tokens[tokenId].dataHashes = newDataHashes;
 
-        emit Transferred(tokenId, msg.sender, to);
+        emit Transferred(tokenId, _msgSender(), to);
         emit PublishedSealedKey(to, tokenId, sealedKeys);
     }
 
@@ -311,7 +347,7 @@ contract AgentNFT is
     ) public virtual returns (uint256) {
         AgentNFTStorage storage $ = _getAgentStorage();
         require(to != address(0), "Zero address");
-        require($.tokens[tokenId].owner == msg.sender, "Not owner");
+        require($.tokens[tokenId].owner == _msgSender(), "Not owner");
 
         TransferValidityProofOutput[] memory proofOupt = $
             .verifier
@@ -345,7 +381,7 @@ contract AgentNFT is
             approvedUser: address(0)
         });
 
-        emit Cloned(tokenId, newTokenId, msg.sender, to);
+        emit Cloned(tokenId, newTokenId, _msgSender(), to);
         emit PublishedSealedKey(to, newTokenId, sealedKeys);
         return newTokenId;
     }
@@ -360,9 +396,9 @@ contract AgentNFT is
         require(to != address(0), "Zero address");
         require($.tokens[tokenId].owner == from, "Not owner");
         require(
-            $.tokens[tokenId].approvedUser == msg.sender ||
-                $.tokens[tokenId].owner == msg.sender ||
-                $.operatorApprovals[from][msg.sender],
+            $.tokens[tokenId].approvedUser == _msgSender() ||
+                $.tokens[tokenId].owner == _msgSender() ||
+                $.operatorApprovals[from][_msgSender()],
             "Not approved"
         );
 
@@ -398,16 +434,16 @@ contract AgentNFT is
             approvedUser: address(0)
         });
 
-        emit Cloned(tokenId, newTokenId, msg.sender, to);
+        emit Cloned(tokenId, newTokenId, _msgSender(), to);
         emit PublishedSealedKey(to, newTokenId, sealedKeys);
         return newTokenId;
     }
 
     function authorizeUsage(uint256 tokenId, address to) public virtual {
         AgentNFTStorage storage $ = _getAgentStorage();
-        require($.tokens[tokenId].owner == msg.sender, "Not owner");
+        require($.tokens[tokenId].owner == _msgSender(), "Not owner");
         $.tokens[tokenId].authorizedUsers.push(to);
-        emit Authorization(msg.sender, to, tokenId);
+        emit Authorization(_msgSender(), to, tokenId);
     }
 
     function ownerOf(uint256 tokenId) public view virtual returns (address) {
@@ -468,15 +504,15 @@ contract AgentNFT is
 
     function approve(address to, uint256 tokenId) public virtual {
         AgentNFTStorage storage $ = _getAgentStorage();
-        require($.tokens[tokenId].owner == msg.sender, "Not owner");
+        require($.tokens[tokenId].owner == _msgSender(), "Not owner");
         $.tokens[tokenId].approvedUser = to;
-        emit Approval(msg.sender, to, tokenId);
+        emit Approval(_msgSender(), to, tokenId);
     }
 
     function setApprovalForAll(address to, bool approved) public virtual {
         AgentNFTStorage storage $ = _getAgentStorage();
-        $.operatorApprovals[msg.sender][to] = approved;
-        emit ApprovalForAll(msg.sender, to, approved);
+        $.operatorApprovals[_msgSender()][to] = approved;
+        emit ApprovalForAll(_msgSender(), to, approved);
     }
 
     function getApproved(

@@ -3,19 +3,28 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC2771Forwarder} from "@openzeppelin/contracts/metatx/ERC2771Forwarder.sol";
 import {Zerogochi} from "../src/Zerogochi.sol";
 import {MockVerifier} from "../src/MockVerifier.sol";
+import {Forwarder} from "../src/Forwarder.sol";
 import {AgentNFT} from "../src/erc7857/AgentNFT.sol";
 
 contract ZerogochiTest is Test {
     Zerogochi pet;
     MockVerifier verifier;
-    address alice = address(0xA11CE);
+    Forwarder forwarder;
+    address alice;
     address bob = address(0xB0B);
+    address relayer = address(0xCAFE);
+    uint256 alicePk = 0xA11CE;
 
     function setUp() public {
+        alice = vm.addr(alicePk);
+        vm.deal(relayer, 10 ether);
+
+        forwarder = new Forwarder();
         verifier = new MockVerifier();
-        Zerogochi impl = new Zerogochi();
+        Zerogochi impl = new Zerogochi(address(forwarder));
         bytes memory initData = abi.encodeCall(
             AgentNFT.initialize,
             (
@@ -168,5 +177,91 @@ contract ZerogochiTest is Test {
         bytes32[] memory hashes = pet.dataHashesOf(id);
         assertEq(hashes.length, 1);
         assertEq(hashes[0], personality);
+    }
+
+    /// Mint via the relayer using ERC-2771 forwarder. Alice signs an EIP-712
+    /// ForwardRequest with her CloudStorage key; relayer broadcasts and pays
+    /// gas; Zerogochi sees alice as _msgSender, so the pet is minted to her.
+    function test_meta_tx_mint_attributes_to_signer() public {
+        bytes memory data = abi.encodeCall(
+            Zerogochi.mintPet,
+            (_proofs(bytes32("metaP")), _descriptions(), uint8(7), 2, 2, 2)
+        );
+
+        ERC2771Forwarder.ForwardRequestData memory req = _buildRequest(alice, address(pet), data);
+        req.signature = _signRequest(alicePk, req);
+
+        vm.prank(relayer);
+        forwarder.execute(req);
+
+        // Pet should be alice's, not the relayer's
+        assertEq(pet.ownerOf(0), alice);
+        (uint256 tokenId, bool exists) = pet.petOf(alice);
+        assertEq(tokenId, 0);
+        assertEq(exists, true);
+        (uint256 noneId, bool noneExists) = pet.petOf(relayer);
+        assertEq(noneId, 0);
+        assertEq(noneExists, false);
+    }
+
+    function _buildRequest(address from, address to, bytes memory data)
+        internal
+        view
+        returns (ERC2771Forwarder.ForwardRequestData memory)
+    {
+        return ERC2771Forwarder.ForwardRequestData({
+            from: from,
+            to: to,
+            value: 0,
+            gas: 1_500_000,
+            deadline: uint48(block.timestamp + 1 hours),
+            data: data,
+            signature: bytes("")
+        });
+    }
+
+    function _signRequest(uint256 pk, ERC2771Forwarder.ForwardRequestData memory req)
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes32 typeHash = keccak256(
+            "ForwardRequest(address from,address to,uint256 value,uint256 gas,uint256 nonce,uint48 deadline,bytes data)"
+        );
+        bytes32 structHash = keccak256(
+            abi.encode(
+                typeHash,
+                req.from,
+                req.to,
+                req.value,
+                req.gas,
+                forwarder.nonces(req.from),
+                req.deadline,
+                keccak256(req.data)
+            )
+        );
+
+        (
+            ,
+            string memory name,
+            string memory version,
+            uint256 chainId,
+            address verifyingContract,
+            ,
+
+        ) = forwarder.eip712Domain();
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(name)),
+                keccak256(bytes(version)),
+                chainId,
+                verifyingContract
+            )
+        );
+
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        return abi.encodePacked(r, s, v);
     }
 }

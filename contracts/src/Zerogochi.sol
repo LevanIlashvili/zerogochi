@@ -40,6 +40,9 @@ contract Zerogochi is AgentNFT {
         }
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address trustedForwarder_) AgentNFT(trustedForwarder_) {}
+
     event Born(uint256 indexed tokenId, address indexed owner, uint64 at, uint8 visualSeed);
     event Fed(uint256 indexed tokenId, uint64 at);
     event Played(uint256 indexed tokenId, uint64 at);
@@ -75,10 +78,10 @@ contract Zerogochi is AgentNFT {
         ) revert InvalidDecay();
 
         PetStorage storage $ = _pets();
-        if ($.ownerToTokenPlusOne[msg.sender] != 0) revert AlreadyHasPet();
+        if ($.ownerToTokenPlusOne[_msgSender()] != 0) revert AlreadyHasPet();
 
         // AgentNFT.mint emits its own event and assigns tokenId; we layer Pet on top.
-        tokenId = mint(proofs, dataDescriptions, msg.sender);
+        tokenId = mint(proofs, dataDescriptions, _msgSender());
 
         $.pets[tokenId] = Pet({
             bornAt: uint64(block.timestamp),
@@ -90,9 +93,9 @@ contract Zerogochi is AgentNFT {
             visualSeed: visualSeed,
             dead: false
         });
-        $.ownerToTokenPlusOne[msg.sender] = tokenId + 1;
+        $.ownerToTokenPlusOne[_msgSender()] = tokenId + 1;
 
-        emit Born(tokenId, msg.sender, uint64(block.timestamp), visualSeed);
+        emit Born(tokenId, _msgSender(), uint64(block.timestamp), visualSeed);
     }
 
     /// @notice Per-token URI override. Upstream returns the same contract
@@ -151,7 +154,7 @@ contract Zerogochi is AgentNFT {
     }
 
     function feed(uint256 tokenId) external {
-        if (ownerOf(tokenId) != msg.sender) revert NotOwner();
+        if (ownerOf(tokenId) != _msgSender()) revert NotOwner();
         _checkDeath(tokenId);
         if (_pets().pets[tokenId].dead) revert PetIsDead();
         _pets().pets[tokenId].lastFedAt = uint64(block.timestamp);
@@ -159,7 +162,7 @@ contract Zerogochi is AgentNFT {
     }
 
     function play(uint256 tokenId) external {
-        if (ownerOf(tokenId) != msg.sender) revert NotOwner();
+        if (ownerOf(tokenId) != _msgSender()) revert NotOwner();
         _checkDeath(tokenId);
         if (_pets().pets[tokenId].dead) revert PetIsDead();
         _pets().pets[tokenId].lastPlayedAt = uint64(block.timestamp);
@@ -167,7 +170,7 @@ contract Zerogochi is AgentNFT {
     }
 
     function logSpoke(uint256 tokenId, bytes32 dialogueHash) external {
-        if (ownerOf(tokenId) != msg.sender) revert NotOwner();
+        if (ownerOf(tokenId) != _msgSender()) revert NotOwner();
         _checkDeath(tokenId);
         if (_pets().pets[tokenId].dead) revert PetIsDead();
         emit Spoke(tokenId, uint64(block.timestamp), dialogueHash);
