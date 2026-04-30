@@ -26,6 +26,26 @@ export class TgInitDataGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest<Request>();
+
+    // Dev-mode bypass — strictly off in production. The frontend must also
+    // be in dev mode to send these headers, so two locks on the same door.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      req.header('x-dev-mode') === '1'
+    ) {
+      const idHeader = req.header('x-dev-user-id');
+      const id = idHeader ? Number(idHeader) : NaN;
+      if (!Number.isFinite(id) || id <= 0) {
+        throw new UnauthorizedException('dev mode missing x-dev-user-id');
+      }
+      req.tg = {
+        user: { id, first_name: 'dev', username: 'dev' },
+        authDate: Math.floor(Date.now() / 1000),
+        raw: 'dev-mode',
+      };
+      return true;
+    }
+
     const raw = (req.header('x-tg-init-data') ??
       (req.query.initData as string | undefined) ??
       '') as string;

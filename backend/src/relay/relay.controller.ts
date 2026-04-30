@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  Inject,
   Logger,
   Post,
   ServiceUnavailableException,
@@ -25,7 +26,7 @@ interface ForwardRequest {
 export class RelayController {
   private readonly log = new Logger(RelayController.name);
 
-  constructor(private readonly eth: EthersService) {}
+  constructor(@Inject(EthersService) private readonly eth: EthersService) {}
 
   @Post('relay')
   @HttpCode(200)
