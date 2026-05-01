@@ -27,3 +27,6 @@ contracts/cache
 contracts/broadcast
 contracts/deployments.json
 
+# backend runtime data
+backend/users.json
+
