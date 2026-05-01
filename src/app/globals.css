@@ -28,6 +28,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prose blocks (dialogue, error messages) — Silkscreen is a bitmap pixel
+   font designed for legibility at small sizes. Default 14px reads cleanly. */
+.prose {
+  font-family: var(--font-pixel-prose), var(--font-pixel), monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.4px;
+}
+
 button,
 input,
 textarea {
