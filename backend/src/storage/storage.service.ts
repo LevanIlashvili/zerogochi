@@ -1,5 +1,5 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { Indexer, MemData } from '@0glabs/0g-ts-sdk';
+import { Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Indexer, MemData } from '@0gfoundation/0g-storage-ts-sdk';
 import { config } from '../config';
 import { EthersService } from '../ethers/ethers.service';
 
@@ -8,7 +8,7 @@ export class StorageService {
   private readonly log = new Logger(StorageService.name);
   private indexer: Indexer | null = null;
 
-  constructor(private readonly eth: EthersService) {}
+  constructor(@Inject(EthersService) private readonly eth: EthersService) {}
 
   private getIndexer(): Indexer {
     if (!this.indexer) this.indexer = new Indexer(config.storageIndexerUrl);
@@ -35,7 +35,12 @@ export class StorageService {
       this.log.error(`storage upload failed: ${err.message}`);
       throw new ServiceUnavailableException(`storage upload: ${err.message}`);
     }
-    this.log.log(`uploaded ${bytes.length} bytes -> ${result.rootHash}`);
-    return result;
+    // Single-file uploads return { txHash, rootHash, txSeq }. The batch shape
+    // (with `txHashes` etc.) is only returned when uploading multiple files.
+    if ('rootHash' in result) {
+      this.log.log(`uploaded ${bytes.length} bytes -> ${result.rootHash}`);
+      return { rootHash: result.rootHash, txHash: result.txHash };
+    }
+    throw new ServiceUnavailableException('unexpected batch upload result');
   }
 }
