@@ -1,0 +1,47 @@
+/* Per-personality flavour overlays applied to the sprite wrapper.
+   Pure CSS — no extra DOM, no inference cost. */
+
+.wrap {
+  display: inline-block;
+  line-height: 0;
+}
+
+/* Anxious pets shake one pixel left/right when idle */
+.anxious {
+  animation: zg-shake 1.6s ease-in-out infinite;
+}
+
+@keyframes zg-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1px); }
+  40% { transform: translateX(1px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+/* Dramatic pets pulse a soft glow */
+.dramatic {
+  filter: drop-shadow(0 0 0 transparent);
+  animation: zg-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes zg-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(155, 188, 15, 0.0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(155, 188, 15, 0.6)); }
+}
+
+/* Vain pets sparkle — slight scale heartbeat */
+.vain {
+  animation: zg-vain 2.0s ease-in-out infinite;
+}
+
+@keyframes zg-vain {
+  0%, 100% { transform: scale(1.0); }
+  50% { transform: scale(1.02); }
+}
+
+/* Cynical pets tilt slightly to one side, perpetually */
+.cynical {
+  transform: rotate(-1.5deg);
+  transform-origin: 50% 80%;
+}

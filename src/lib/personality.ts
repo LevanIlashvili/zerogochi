@@ -13,6 +13,7 @@ import { keccak256, toUtf8Bytes } from "ethers";
 export interface Personality {
   vector: PersonalityVector;
   voice: string;
+  name: string;
   visualSeed: number;
   hungerDecayRate: number;
   moodDecayRate: number;
@@ -124,6 +125,7 @@ export function buildPersonality(vector: PersonalityVector = generateVector()): 
   return {
     vector,
     voice,
+    name: deriveName(vector),
     visualSeed: deriveVisualSeed(vector),
     // Anxious pets get hungry faster. Dramatic pets fall out of mood faster.
     // Curious pets burn energy faster (always running off to investigate).
@@ -131,6 +133,36 @@ export function buildPersonality(vector: PersonalityVector = generateVector()): 
     moodDecayRate: clampDecay(1 + (vector.dramatic >> 6)),
     energyDecayRate: clampDecay(1 + (vector.curious >> 6)),
   };
+}
+
+/// Two-syllable monikers, deterministically chosen by the most-prominent
+/// trait. The result is "<name> the <epithet>" — short, ownable.
+function deriveName(v: PersonalityVector): string {
+  const traits: Array<[keyof PersonalityVector, number, string, string[]]> = [
+    ["anxious", v.anxious, "Anxious", ["Pip", "Twee", "Bink", "Ner", "Gunk", "Wisp", "Drib"]],
+    ["dramatic", v.dramatic, "Dramatic", ["Bingus", "Floof", "Theo", "Glamm", "Olo", "Vex"]],
+    ["affectionate", v.affectionate, "Sweet", ["Mochi", "Bun", "Plum", "Hugg", "Dolly", "Pook"]],
+    ["talkative", v.talkative, "Loud", ["Yip", "Babs", "Chatto", "Murm", "Jib", "Trill"]],
+    ["cynical", v.cynical, "Cynic", ["Grim", "Mort", "Snide", "Wry", "Krem", "Dorr"]],
+    ["curious", v.curious, "Curious", ["Sniff", "Peek", "Nibb", "Bibb", "Quib", "Ory"]],
+    ["vain", v.vain, "Vain", ["Plume", "Glint", "Lure", "Vox", "Lillo", "Preen"]],
+    ["loyal", v.loyal, "Loyal", ["Brem", "Tobs", "Loll", "Dook", "Otto", "Wend"]],
+  ];
+  // Pick the trait with the highest score
+  const sorted = [...traits].sort((a, b) => b[1] - a[1]);
+  const [, , epithet, names] = sorted[0];
+  // Deterministic name pick from the trait's pool, seeded by vector sum
+  const sum =
+    v.anxious +
+    v.dramatic +
+    v.affectionate +
+    v.talkative +
+    v.cynical +
+    v.curious +
+    v.vain +
+    v.loyal;
+  const name = names[sum % names.length];
+  return `${name} the ${epithet}`;
 }
 
 /**

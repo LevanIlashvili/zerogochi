@@ -3,6 +3,7 @@
 import { api } from "./api";
 import { mintPet } from "./mint";
 import { buildPersonality, personalityHash, type Personality } from "./personality";
+import { cachePersonality } from "./personalityCache";
 import { seal } from "./seal";
 import { signerFromWallet, type ZgWallet } from "./wallet";
 
@@ -45,6 +46,10 @@ export async function createPet(wallet: ZgWallet): Promise<CreatePetResult> {
     moodDecayRate: personality.moodDecayRate,
     energyDecayRate: personality.energyDecayRate,
   });
+
+  // Cache plaintext locally so subsequent talks don't have to re-derive
+  // (the wallet key is already client-side; same trust boundary).
+  await cachePersonality(personality);
 
   return {
     txHash: mint.txHash,
