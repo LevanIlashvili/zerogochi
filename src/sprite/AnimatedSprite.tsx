@@ -15,6 +15,10 @@ interface Props {
 export interface AnimatedSpriteHandle {
   triggerAction: (action: "eating" | "playing" | "talking") => Promise<void>;
   triggerReaction: (kind: "heart" | "star") => void;
+  /** Loop an action indefinitely until stopHoldAction is called. Used to
+   *  keep the pet visibly working while a tx is in flight. */
+  startHoldAction: (action: "eating" | "playing" | "talking") => void;
+  stopHoldAction: () => void;
 }
 
 export const AnimatedSprite = forwardRef<AnimatedSpriteHandle, Props>(function AnimatedSprite(
@@ -28,6 +32,7 @@ export const AnimatedSprite = forwardRef<AnimatedSpriteHandle, Props>(function A
   const [reactionY, setReactionY] = useState(0);
   const [idleMicro, setIdleMicro] = useState<0 | 1 | 2 | 3>(0);
   const microTimer = useRef<number | null>(null);
+  const holdTimer = useRef<number | null>(null);
 
   // Base 2 FPS body breathing animation
   useEffect(() => {
@@ -94,7 +99,32 @@ export const AnimatedSprite = forwardRef<AnimatedSpriteHandle, Props>(function A
       };
       requestAnimationFrame(animate);
     },
+    startHoldAction: (kind) => {
+      if (holdTimer.current) window.clearInterval(holdTimer.current);
+      setAction(kind);
+      setActionFrame(0);
+      let i = 0;
+      holdTimer.current = window.setInterval(() => {
+        i = (i + 1) % 4;
+        setActionFrame(i as 0 | 1 | 2 | 3);
+      }, 220);
+    },
+    stopHoldAction: () => {
+      if (holdTimer.current) {
+        window.clearInterval(holdTimer.current);
+        holdTimer.current = null;
+      }
+      setAction("idle");
+      setActionFrame(0);
+    },
   }));
+
+  // Cleanup hold timer on unmount
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) window.clearInterval(holdTimer.current);
+    };
+  }, []);
 
   return (
     <Sprite
