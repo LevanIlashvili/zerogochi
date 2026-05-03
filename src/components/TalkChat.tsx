@@ -53,6 +53,26 @@ export function TalkChat({ tokenId, wallet, personality, inherited, onClose }: P
     inputRef.current?.focus();
   }, []);
 
+  // Keep the chat box height in sync with Telegram's stable viewport so the
+  // soft keyboard doesn't overlap the input. Falls through silently outside
+  // Telegram (the CSS fallback to dvh handles browser keyboards).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const wa = (window.Telegram as unknown as { WebApp?: { viewportStableHeight?: number; onEvent?: (e: string, cb: () => void) => void; offEvent?: (e: string, cb: () => void) => void } } | undefined)?.WebApp;
+    if (!wa) return;
+    function apply() {
+      const h = wa?.viewportStableHeight;
+      if (typeof h === "number" && h > 0) {
+        document.documentElement.style.setProperty("--tg-vh", `${h}px`);
+      }
+    }
+    apply();
+    wa.onEvent?.("viewportChanged", apply);
+    return () => {
+      wa.offEvent?.("viewportChanged", apply);
+    };
+  }, []);
+
   // Persist history per pet
   useEffect(() => {
     saveHistory(tokenId, messages);
@@ -335,21 +355,16 @@ function Bubble({ message }: { message: Message }) {
         {message.content}
         {message.typing && <span className={styles.cursor}>_</span>}
       </div>
-      {(message.verified !== undefined || message.txHash) && (
+      {message.txHash && (
         <div className={styles.meta}>
-          {message.verified !== undefined && (
-            <span>{message.verified ? "tee verified" : "tee unverified"}</span>
-          )}
-          {message.txHash && (
-            <a
-              className={styles.metaLink}
-              href={`https://chainscan.0g.ai/tx/${message.txHash}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              onchain
-            </a>
-          )}
+          <a
+            className={styles.metaLink}
+            href={`https://chainscan.0g.ai/tx/${message.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            onchain
+          </a>
         </div>
       )}
     </div>

@@ -12,14 +12,23 @@
 .box {
   width: 100%;
   max-width: 380px;
+  /* Runtime sets --tg-vh from Telegram.WebApp.viewportStableHeight so the
+     chat shrinks when the keyboard opens. Falls back to 90dvh / 90vh on
+     non-Telegram browsers (dvh excludes the soft keyboard on modern iOS). */
   height: 600px;
-  max-height: 90vh;
+  max-height: var(--tg-vh, 90dvh);
   background: var(--gb-lightest);
   color: var(--gb-darkest);
   border: 4px solid var(--gb-darkest);
   box-shadow: 0 6px 0 0 #000;
   display: flex;
   flex-direction: column;
+}
+
+@supports not (height: 1dvh) {
+  .box {
+    max-height: var(--tg-vh, 90vh);
+  }
 }
 
 .header {
@@ -250,7 +259,10 @@
 .input {
   flex: 1;
   min-width: 0; /* allow input to shrink so SEND stays inside the box */
-  padding: 8px 10px;
+  padding: 10px 10px;
+  /* Must be >= 16px to stop iOS Safari from auto-zooming the page on focus.
+     Overrides the .prose 14px default. */
+  font-size: 16px !important;
   background: var(--gb-light);
   color: var(--gb-darkest);
   border: 2px solid var(--gb-darkest);

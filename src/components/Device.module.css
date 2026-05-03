@@ -92,10 +92,14 @@
 
 .lcdInner {
   background: var(--gb-lightest);
-  min-height: 280px;
+  /* Fixed height keeps the device size identical across loading/live/error
+     states. Content centers vertically when shorter. */
+  height: 340px;
   padding: 14px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background-image: repeating-linear-gradient(
     0deg,
     rgba(15, 56, 15, 0.03) 0px,

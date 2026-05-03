@@ -39,7 +39,7 @@ export function TalkOverlay({ reply, verified, onClose }: Props) {
           <span className={styles.cursor}>_</span>
         </div>
         <div className={styles.foot}>
-          <span>{verified ? "tee verified" : "tee unverified"}</span>
+          <span />
           <button className={styles.close} onClick={onClose}>X</button>
         </div>
       </div>

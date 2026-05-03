@@ -51,6 +51,16 @@ export function Pet() {
 
   // Boot sequence — splash for ~1.3s while we hydrate
   useEffect(() => {
+    // Tell Telegram the mini app is ready to render and expand it to fullscreen.
+    // Harmless when not running inside Telegram (window.Telegram is undefined).
+    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.ready?.();
+        window.Telegram.WebApp.expand?.();
+      } catch {
+        // ignore — older clients may not implement these
+      }
+    }
     const t1 = window.setTimeout(() => setBootStep(1), 280);
     const t2 = window.setTimeout(() => setBootStep(2), 700);
     return () => {
@@ -279,16 +289,23 @@ export function Pet() {
 
   const dev = isDevMode();
   const addrShort = wallet ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : "...";
+  const explorerBase = process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://chainscan.0g.ai";
+  const zerogochiAddr = process.env.NEXT_PUBLIC_ZEROGOCHI ?? "";
+  const walletExplorerUrl = wallet ? `${explorerBase}/address/${wallet.address}` : null;
+  const nftExplorerUrl =
+    tokenId != null && zerogochiAddr
+      ? `${explorerBase}/nft/${zerogochiAddr}/${tokenId}`
+      : null;
 
   return (
     <>
       <Device
         controls={
-          phase === "live" ? (
-            <Buttons onPress={handle} disabled={busy} />
-          ) : phase === "noPet" ? (
+          phase === "noPet" ? (
             <MintControls onMint={doMint} busy={busy} />
-          ) : null
+          ) : (
+            <Buttons onPress={handle} disabled={busy || phase !== "live"} />
+          )
         }
         footer={
           <>
@@ -297,7 +314,33 @@ export function Pet() {
               {dev ? " · dev" : ""}
               {inherited ? " · inherited" : ""}
             </div>
-            <div>{addrShort}</div>
+            <div>
+              {walletExplorerUrl ? (
+                <a
+                  href={walletExplorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  {addrShort}
+                </a>
+              ) : (
+                addrShort
+              )}
+              {nftExplorerUrl && (
+                <>
+                  {"  ·  "}
+                  <a
+                    href={nftExplorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "inherit", textDecoration: "underline" }}
+                  >
+                    nft #{String(tokenId ?? 0).padStart(4, "0")}
+                  </a>
+                </>
+              )}
+            </div>
           </>
         }
       >
@@ -442,18 +485,71 @@ function BootScreen({ step, label }: { step: number; label?: string }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 240,
-        gap: 12,
+        flex: 1,
+        gap: 10,
         color: "var(--gb-darkest)",
       }}
     >
+      {step >= 1 && <EthDiamond />}
       <div style={{ fontSize: 10, letterSpacing: 2 }}>
         {step === 0 ? "" : "ZEROGOCHI"}
       </div>
-      <div style={{ fontSize: 6, letterSpacing: 1, height: 12 }}>
+      <div style={{ fontSize: 6, letterSpacing: 1, height: 12, marginTop: 6 }}>
         {step === 1 ? "* * *" : step >= 2 ? (label ?? "READY") : ""}
       </div>
     </div>
+  );
+}
+
+/** Pixel-art Ethereum diamond — 11 wide × 17 tall, 4 GB greens. */
+function EthDiamond() {
+  // legend: o=outline, l=light face, d=dark face, " "=transparent
+  const grid = [
+    "     o     ",
+    "    olo    ",
+    "   oldlo   ",
+    "  oldddlo  ",
+    " olddddldo ",
+    "olddddldddo",
+    "olldddldddo",
+    "ollddldlddo",
+    " olldldddo ",
+    "  olllddo  ",
+    "   olldo   ",
+    "    odo    ",
+    "     o     ",
+    "           ",
+    "  ooooooo  ",
+    " olllldddo ",
+    "  ooooooo  ",
+  ];
+  const W = 11;
+  const H = grid.length;
+  const SCALE = 4;
+  const rects: React.ReactElement[] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      const ch = grid[y][x];
+      if (ch === " ") continue;
+      const fill =
+        ch === "o"
+          ? "var(--gb-darkest)"
+          : ch === "l"
+            ? "var(--gb-light)"
+            : "var(--gb-dark)";
+      rects.push(<rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill} />);
+    }
+  }
+  return (
+    <svg
+      width={W * SCALE}
+      height={H * SCALE}
+      viewBox={`0 0 ${W} ${H}`}
+      shapeRendering="crispEdges"
+      style={{ imageRendering: "pixelated" }}
+    >
+      {rects}
+    </svg>
   );
 }
 
@@ -465,7 +561,7 @@ function ErrorScreen({ message }: { message: string }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 240,
+        flex: 1,
         gap: 10,
         color: "var(--gb-darkest)",
         padding: 12,
@@ -488,7 +584,7 @@ function EggScreen() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 240,
+        flex: 1,
         gap: 14,
         color: "var(--gb-darkest)",
       }}
