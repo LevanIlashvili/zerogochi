@@ -10,7 +10,11 @@ interface UserRecord {
   lastNotifAt?: number;
 }
 
-const STORE_FILE = join(process.cwd(), 'users.json');
+// Persistence path. In Docker we mount a volume at /app/data and set
+// USERS_FILE=/app/data/users.json so registrations survive container redeploys.
+const STORE_FILE = process.env.USERS_FILE
+  ? process.env.USERS_FILE
+  : join(process.cwd(), 'users.json');
 
 /**
  * Tiny user registry: TG user/chat id ↔ wallet address ↔ tokenId.

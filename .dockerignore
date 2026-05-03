@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+build
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.git
+.gitignore
+README.md
+backend
+contracts
+docs
+.vercel
+.turbo

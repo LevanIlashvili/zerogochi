@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+users.json
+*.log
+.DS_Store
+.git
+.gitignore
+README.md
+_check.ts
+_chat.ts

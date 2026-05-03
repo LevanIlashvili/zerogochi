@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TgInitDataGuard } from '../auth/tg-initdata.guard';
+import { RateLimitGuard } from '../auth/rate-limit.guard';
 import { EthersService } from '../ethers/ethers.service';
 import { HistoryService } from './history.service';
 import { InferenceService } from './inference.service';
@@ -34,7 +35,7 @@ interface TalkBody {
 }
 
 @Controller('api')
-@UseGuards(TgInitDataGuard)
+@UseGuards(TgInitDataGuard, RateLimitGuard)
 export class TalkController {
   private readonly log = new Logger(TalkController.name);
 
